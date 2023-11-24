@@ -1,6 +1,9 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, unused_local_variable
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, unused_local_variable, unused_element, avoid_print
 
+import 'package:another_flushbar/flushbar.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:vigenesia_fajarfirmansyah/constants/const.dart';
 import 'package:vigenesia_fajarfirmansyah/screens/login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -15,8 +18,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
+
+    // String baseurl =
+    //     "https://vigenesia.org/"; // ganti dengan ip address kamu / tempat kamu menyimpan backend
+    Future postRegister(
+        String nama, String profesi, String email, String password) async {
+      var dio = Dio();
+      dynamic data = {
+        "nama": nama,
+        "profesi": profesi,
+        "email": email,
+        "password": password
+      };
+      try {
+        final response = await dio.post("$baseurl/api/registrasi/",
+            data: data,
+            options: Options(headers: {'Content-type': 'application/json'}));
+        print("Respon -> ${response.data} + ${response.statusCode}");
+        if (response.statusCode == 200) {
+          return response.data;
+        }
+      } catch (e) {
+        print("Failed To Load $e");
+      }
+    }
+
+    TextEditingController nameController = TextEditingController();
+    TextEditingController profesiController = TextEditingController();
+    TextEditingController emailController = TextEditingController();
+    TextEditingController passwordController = TextEditingController();
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      // backgroundColor: Colors.white,
       appBar: AppBar(
         leadingWidth: 70,
         leading: InkWell(
@@ -54,14 +87,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 SizedBox(height: 12),
                 TextFormField(
-                  controller: TextEditingController(),
+                  controller: nameController,
                   decoration: InputDecoration(
                     prefixIcon: Icon(
                       Icons.person_outline,
                       color: Color(0xff8391A1),
                     ),
                     filled: true,
-                    fillColor: Color(0xffF7F8F9),
+                    // fillColor: Color(0xffF7F8F9),
+                    fillColor: Theme.of(context).colorScheme.background,
                     hintText: "Nama",
                     hintStyle: TextStyle(color: Color(0xff8391A1)),
                     focusedErrorBorder: OutlineInputBorder(
@@ -83,14 +117,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 12),
                 TextFormField(
-                  controller: TextEditingController(),
+                  controller: profesiController,
                   decoration: InputDecoration(
                     prefixIcon: Icon(
                       Icons.group_add_outlined,
                       color: Color(0xff8391A1),
                     ),
                     filled: true,
-                    fillColor: Color(0xffF7F8F9),
+                    // fillColor: Color(0xffF7F8F9),
+                    fillColor: Theme.of(context).colorScheme.background,
                     hintText: "Profesi",
                     hintStyle: TextStyle(color: Color(0xff8391A1)),
                     focusedErrorBorder: OutlineInputBorder(
@@ -112,14 +147,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 12),
                 TextFormField(
-                  controller: TextEditingController(),
+                  controller: emailController,
                   decoration: InputDecoration(
                     prefixIcon: Icon(
                       Icons.email_outlined,
                       color: Color(0xff8391A1),
                     ),
                     filled: true,
-                    fillColor: Color(0xffF7F8F9),
+                    // fillColor: Color(0xffF7F8F9),
+                    fillColor: Theme.of(context).colorScheme.background,
                     hintText: "Email",
                     hintStyle: TextStyle(color: Color(0xff8391A1)),
                     focusedErrorBorder: OutlineInputBorder(
@@ -141,7 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 12),
                 TextFormField(
-                  controller: TextEditingController(),
+                  controller: passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     prefixIcon: Icon(
@@ -153,7 +189,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: Color(0xff8391A1),
                     ),
                     filled: true,
-                    fillColor: Color(0xffF7F8F9),
+                    // fillColor: Color(0xffF7F8F9),
+                    fillColor: Theme.of(context).colorScheme.background,
                     hintText: "Password",
                     hintStyle: TextStyle(color: Color(0xff8391A1)),
                     focusedErrorBorder: OutlineInputBorder(
@@ -187,12 +224,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => LoginScreen()));
+                    onPressed: () async {
+                      await postRegister(
+                              nameController.text,
+                              profesiController.text,
+                              emailController.text,
+                              passwordController.text)
+                          .then((value) => {
+                                if (value != null)
+                                  {
+                                    setState(() {
+                                      // Navigator.pop(context);
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  LoginScreen()));
+                                      Flushbar(
+                                        message: "Berhasil Registrasi",
+                                        messageColor: Colors.black,
+                                        duration: Duration(seconds: 2),
+                                        backgroundColor: Colors.greenAccent,
+                                        flushbarPosition: FlushbarPosition.TOP,
+                                      ).show(context);
+                                    })
+                                  }
+                                else if (value == null)
+                                  {
+                                    Flushbar(
+                                      message:
+                                          "Check Your Field Before Register",
+                                      duration: Duration(seconds: 5),
+                                      backgroundColor: Colors.redAccent,
+                                      flushbarPosition: FlushbarPosition.TOP,
+                                    ).show(context)
+                                  }
+                              });
                     },
+                    // onPressed: () {
+                    //   Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //           builder: (context) => LoginScreen()));
+                    // },
                     child: Text(
                       'Register',
                       style: TextStyle(

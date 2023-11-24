@@ -1,6 +1,11 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, unused_local_variable
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, unused_local_variable, unused_field, avoid_print
 
+import 'package:another_flushbar/flushbar.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:vigenesia_fajarfirmansyah/constants/const.dart';
+import 'package:vigenesia_fajarfirmansyah/models/login_model.dart';
 import 'package:vigenesia_fajarfirmansyah/screens/main_screen.dart';
 import 'package:vigenesia_fajarfirmansyah/screens/register_screen.dart';
 
@@ -12,12 +17,38 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  String? nama;
+  final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
+
+  Future<LoginModels?> postLogin(String email, String password) async {
+    var dio = Dio();
+    // String baseurl = "https://vigenesia.org/"; // ganti dengan ip address kamu /
+
+    Map<String, dynamic> data = {"email": email, "password": password};
+    try {
+      final response = await dio.post("$baseurl/api/login/",
+          data: data,
+          options: Options(headers: {'Content-type': 'application/json'}));
+      print("Respon -> ${response.data} + ${response.statusCode}");
+      if (response.statusCode == 200) {
+        final loginModel = LoginModels.fromJson(response.data);
+        return loginModel;
+      }
+    } catch (e) {
+      print("Failed To Load $e");
+    }
+    return null;
+  }
+
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     return Scaffold(
-      backgroundColor: Colors.white,
+      // backgroundColor: Colors.white,
       appBar: AppBar(
         leadingWidth: 70,
         leading: InkWell(
@@ -54,14 +85,15 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 TextFormField(
-                  controller: TextEditingController(),
+                  controller: emailController,
                   decoration: InputDecoration(
                     prefixIcon: Icon(
                       Icons.email_outlined,
                       color: Color(0xff8391A1),
                     ),
                     filled: true,
-                    fillColor: Color(0xffF7F8F9),
+                    // fillColor: Color(0xffF7F8F9),
+                    fillColor: Theme.of(context).colorScheme.background,
                     hintText: "Email",
                     hintStyle: TextStyle(color: Color(0xff8391A1)),
                     focusedErrorBorder: OutlineInputBorder(
@@ -83,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 SizedBox(height: 12),
                 TextFormField(
-                  controller: TextEditingController(),
+                  controller: passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     prefixIcon: Icon(
@@ -95,7 +127,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Color(0xff8391A1),
                     ),
                     filled: true,
-                    fillColor: Color(0xffF7F8F9),
+                    // fillColor: Color(0xffF7F8F9),
+                    fillColor: Theme.of(context).colorScheme.background,
                     hintText: "Password",
                     hintStyle: TextStyle(color: Color(0xff8391A1)),
                     focusedErrorBorder: OutlineInputBorder(
@@ -138,12 +171,39 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => MainScreen()));
+                    onPressed: () async {
+                      await postLogin(
+                              emailController.text, passwordController.text)
+                          .then((value) => {
+                                if (value != null)
+                                  {
+                                    setState(() {
+                                      nama = value.data?.nama;
+                                      Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (BuildContext context) =>
+                                                  MainScreen(nama: nama!)));
+                                    })
+                                  }
+                                else if (value == null)
+                                  {
+                                    Flushbar(
+                                      message: "Check Your Email / Password",
+                                      duration: Duration(seconds: 5),
+                                      backgroundColor: Colors.redAccent,
+                                      flushbarPosition: FlushbarPosition.TOP,
+                                    ).show(context)
+                                  }
+                              });
                     },
+
+                    // onPressed: () {
+                    //   Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //           builder: (context) => MainScreen()));
+                    // },
                     child: Text(
                       'Login',
                       style: TextStyle(
